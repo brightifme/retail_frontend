@@ -1,89 +1,55 @@
-"use client";
-// StaffRegistration.js
 import React, { useState } from 'react';
-import axios from 'axios';
-import { Container, Row, Col, Form, Button, Card } from 'react-bootstrap';
+import { Alert } from 'react-bootstrap';
 
-const StaffRegistration = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fingerprintTemplate, setFingerprintTemplate] = useState(null);
+function FingerprintScanner() {
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState(null);
+  const [scanned, setScanned] = useState(false);
 
-  const handleFingerprintCapture = async () => {
+  const handleScanFingerprint = async () => {
     try {
-      if (window.SG) {
-        const template = await window.SG.SGIFPCapture();
-        console.log(template);
-        setFingerprintTemplate(template);
+      setScanning(true);
+      const response = await fetch('https://localhost:8443/SGIFPCapture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://localhost:8443'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.ErrorCode === 0) {
+        setScanned(true);
       } else {
-        console.error("Fingerprint reader not detected");
+        setError(`Error: ${data.ErrorCode}`);
       }
     } catch (error) {
-      console.error(error);
+      setError('Error: Failed to scan fingerprint');
+    } finally {
+      setScanning(false);
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    // Send request to backend API to register staff member
-    const response = await axios.post('/api/register-staff', {
-      name,
-      email,
-      password,
-      fingerprintTemplate,
-    });
-
-    // Handle response
-    console.log(response.data);
-  };
-
   return (
-    <Container className="mt-5">
-      <Row className="justify-content-center">
-        <Col md={6}>
-          <Card>
-            <Card.Body>
-              <h2 className="text-center mb-4">Staff Registration</h2>
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                  />
-                </Form.Group>
-                <Button variant="secondary" className="me-2" onClick={handleFingerprintCapture}>
-                  Capture Fingerprint
-                </Button>
-                <Button variant="primary" type="submit">
-                  Register Staff Member
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+    <div>
+      {scanning ? (
+        <p>Scanning fingerprint...</p>
+      ) : (
+        <>
+          <button onClick={handleScanFingerprint}>Scan Fingerprint</button>
+          {scanned ? (
+            <Alert variant="success">Fingerprint scanned successfully!</Alert>
+          ) : (
+            <p></p>
+          )}
+          {error && (
+            <Alert variant="danger">{error}</Alert>
+          )}
+        </>
+      )}
+    </div>
   );
-};
+}
 
-export default StaffRegistration;
+export default FingerprintScanner;
