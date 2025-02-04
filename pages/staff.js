@@ -1,55 +1,40 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-bootstrap';
 
-function FingerprintScanner() {
-  const [scanning, setScanning] = useState(false);
+function App() {
+  const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
-  const [scanned, setScanned] = useState(false);
 
-  const handleScanFingerprint = async () => {
+  const handleClick = async () => {
     try {
-      setScanning(true);
       const response = await fetch('https://localhost:8443/SGIFPCapture', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Origin': 'https://localhost:8443'
         }
       });
-
       const data = await response.json();
-
-      if (data.ErrorCode === 0) {
-        setScanned(true);
-      } else {
-        setError(`Error: ${data.ErrorCode}`);
-      }
+      setResponse(data);
     } catch (error) {
-      setError('Error: Failed to scan fingerprint');
-    } finally {
-      setScanning(false);
+      setError(error.message);
     }
   };
 
   return (
     <div>
-      {scanning ? (
-        <p>Scanning fingerprint...</p>
+      <button onClick={handleClick}>Capture Fingerprint</button>
+      {response ? (
+        <div>
+          <h2>Response:</h2>
+          <pre>{JSON.stringify(response, null, 2)}</pre>
+        </div>
       ) : (
-        <>
-          <button onClick={handleScanFingerprint}>Scan Fingerprint</button>
-          {scanned ? (
-            <Alert variant="success">Fingerprint scanned successfully!</Alert>
-          ) : (
-            <p></p>
-          )}
-          {error && (
-            <Alert variant="danger">{error}</Alert>
-          )}
-        </>
+        <p>No response yet.</p>
       )}
+      {error ? (
+        <p style={{ color: 'red' }}>{error}</p>
+      ) : null}
     </div>
   );
 }
 
-export default FingerprintScanner;
+export default App;
